@@ -64,7 +64,8 @@ void mtk_configure_size(int cw, int ch, unsigned states, int min_w, int min_h,
 
 int mtk_draw_scale(int w, int h, int s)
 {
-	while (s > 1 && (w > MTK_CAIRO_MAX / s || h > MTK_CAIRO_MAX / s))
+	while (s > 1 && (w > MTK_CAIRO_MAX / s || h > MTK_CAIRO_MAX / s ||
+	    (int64_t)w * s * 4 * h * s > INT32_MAX))
 		s--;
 	return s;
 }

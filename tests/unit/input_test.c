@@ -258,6 +258,9 @@ TEST(cursor)
 	CHECK_INT(mtk_draw_scale(120, 20000, 2), 1);
 	CHECK_INT(mtk_draw_scale(40000, 10, 3), 1);
 	CHECK_INT(mtk_draw_scale(300, 120, 16), 16);
+	/* A pool holds less than 2 GiB: 8192 x 8192 at 3 would be 2.4 GiB. */
+	CHECK_INT(mtk_draw_scale(8192, 8192, 3), 2);
+	CHECK_INT(mtk_draw_scale(8192, 8192, 2), 2);
 }
 
 TEST(scroll)
