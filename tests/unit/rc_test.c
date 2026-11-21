@@ -331,6 +331,22 @@ TEST(lists)
 	mtk_theme_load(&t);
 	CHECK_INT(t.list.fg, 0xffd700);
 	check_lists(&t);
+	/* Set, though it is Motif's white too: chosen, moved as far as it reads. */
+	rc(dir, "Mwm*background: #8c8c8c\nMwm*foreground: #ffffff\n");
+	mtk_theme_load(&t);
+	check_lists(&t);
+	CHECK(t.list.fg != 0xffffff && t.list.fg != mtk_best_contrast(t.list.bg));
+	/* The palette's text, though it is Motif's white on basicBackground too. */
+	rc(dir, "Mwm*basicBackground: #795f78\nMwm*textForeground: #ffffff\n");
+	mtk_theme_load(&t);
+	CHECK_INT(t.inactive.fg, mtk_text_color(0x795f78));
+	check_lists(&t);
+	CHECK(t.list.fg != mtk_best_contrast(t.list.bg));
+	/* activeForeground stays on the selection where it reads. */
+	rc(dir, "Mwm*activeBackground: #7387ad\nMwm*activeForeground: #000033\n");
+	mtk_theme_load(&t);
+	check_lists(&t);
+	CHECK(t.select.bg == 0x7387ad && t.select.fg == 0x000033);
 
 	/* A theme made by hand gets the same: mtk_theme_lists() is what loads it. */
 	struct mtk_theme m = { 0 };
@@ -343,6 +359,10 @@ TEST(lists)
 	CHECK_INT(m.list.fg, t.list.fg);
 	CHECK_INT(m.select.bg, t.select.bg);
 	CHECK_INT(m.select.fg, t.select.fg);
+	/* A text a client chose otherwise than Motif, without the flags: kept. */
+	m.inactive = mtk_shade(0x8c8c8c, 0x202020);
+	mtk_theme_lists(&m);
+	CHECK_INT(m.list.fg, 0x202020);
 
 	/* Light on light, dark on dark. */
 	rc(dir, "Mwm*background: #ffffff\nMwm*activeBackground: #ffffff\n");
