@@ -1,6 +1,6 @@
-/* failpoll.c - LD_PRELOAD for tests/ui.sh: the poll of mtkdemo's loop, with the
- * Wayland fd and the one fd it watches, fails as under memory pressure.
- * libwayland's own polls have one fd and go through. */
+/* failpoll.c - LD_PRELOAD for black-box tests: the poll of an mtk loop with one fd
+ * watched beside Wayland's, as mtkdemo's or osDisplay's, fails as under memory
+ * pressure. libwayland's own polls have one fd and go through. */
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #include <errno.h>
