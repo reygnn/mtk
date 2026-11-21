@@ -17,7 +17,7 @@
 #include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-compose.h>
 
-#define MTK_VERSION "0.2.0"
+#define MTK_VERSION "0.3.0"
 
 /* ---- colours (color.c) ---------------------------------------------------- */
 
@@ -144,6 +144,14 @@ void mtk_cursor_fit(int w, int h, int s, int has_vp, int *buf_scale, int *vw,
 /* The buffer scale for the compositor's preferred factor: at most 16; 0 for a
  * factor below 1, which is to be ignored. */
 int mtk_buffer_scale(int factor);
+
+/* Cairo draws at most this many pixels wide or high; a larger buffer stays black. */
+#define MTK_CAIRO_MAX 32767
+
+/* The scale to draw a window of w x h surface pixels at, for the buffer scale s:
+ * the largest up to s whose buffer Cairo can draw, so that a huge window is drawn
+ * at a lower scale and enlarged by the compositor. At least 1. */
+int mtk_draw_scale(int w, int h, int s);
 
 /* The seats the compositor has announced and not removed, oldest first: one is
  * bound, the others wait for it to go. */

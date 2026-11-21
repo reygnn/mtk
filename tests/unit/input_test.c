@@ -220,6 +220,13 @@ TEST(cursor)
 	CHECK_INT(mtk_buffer_scale(-3), 0);
 	CHECK_INT(mtk_buffer_scale(2), 2);
 	CHECK_INT(mtk_buffer_scale(100), 16);
+	/* Past what Cairo draws: the largest scale that fits, at least 1. */
+	CHECK_INT(mtk_draw_scale(9000, 120, 4), 3);
+	CHECK_INT(mtk_draw_scale(8191, 120, 4), 4);
+	CHECK_INT(mtk_draw_scale(8192, 120, 4), 3);
+	CHECK_INT(mtk_draw_scale(120, 20000, 2), 1);
+	CHECK_INT(mtk_draw_scale(40000, 10, 3), 1);
+	CHECK_INT(mtk_draw_scale(300, 120, 16), 16);
 }
 
 TEST(scroll)

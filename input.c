@@ -45,6 +45,13 @@ int mtk_buffer_scale(int factor)
 	return factor > 16 ? 16 : factor;       /* no output is denser */
 }
 
+int mtk_draw_scale(int w, int h, int s)
+{
+	while (s > 1 && (w > MTK_CAIRO_MAX / s || h > MTK_CAIRO_MAX / s))
+		s--;
+	return s;
+}
+
 int mtk_seats_add(struct mtk_seats *s, unsigned name, unsigned ver)
 {
 	if (s->n == MTK_MAX_SEATS)

@@ -5,6 +5,7 @@
  *
  *   MTKDEMO_STATE=FILE   "key value" lines, rewritten whole on each change
  *   MTKDEMO_FIXED=1      always 300x120, as a dock tool
+ *   MTKDEMO_WIDTH=N      N wide instead of 300
  *   MTKDEMO_DECO=1       ask for mwc's frame
  *
  * Keys: text into the field, BackSpace, Esc or Ctrl+Q quits. SIGUSR1 counts
@@ -230,6 +231,8 @@ int main(int argc, char **argv)
 	state_path = getenv("MTKDEMO_STATE");
 	const char *e = getenv("MTKDEMO_FIXED");
 	int fixed = e && *e == '1';
+	e = getenv("MTKDEMO_WIDTH");
+	int width = e && atoi(e) > 0 ? atoi(e) : 300;
 	e = getenv("MTKDEMO_DECO");
 	int deco = e && *e == '1';
 
@@ -247,7 +250,7 @@ int main(int argc, char **argv)
 	pango_font_description_free(font);
 
 	win = mtk_window_new(m, &(struct mtk_window_config){
-		.width = 300, .height = 120, .fixed = fixed, .min_width = 200,
+		.width = width, .height = 120, .fixed = fixed, .min_width = 200,
 		.min_height = 100, .server_decoration = deco,
 	}, &listener, NULL);
 

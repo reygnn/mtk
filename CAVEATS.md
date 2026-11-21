@@ -12,7 +12,9 @@ Buffers are XRGB8888, so a window is opaque.
 It needs wl_compositor 4. It draws at the integer scale the compositor asks for with
 wl_compositor 6. A fractional scale is drawn at the next integer and scaled down by
 the compositor; a compositor with wl_compositor 4 or 5 never asks, and there the
-window stays at scale 1. A scale above 16 is drawn at 16.
+window stays at scale 1. A scale above 16 is drawn at 16. A window too large for
+Cairo's 32767 pixels at its scale is drawn at a lower one and enlarged by the
+compositor; one past 32767 surface pixels stays black.
 
 A lost connection, a failed buffer allocation and a failed poll print why and exit
 with 1: the clients have nothing to save.

@@ -245,13 +245,14 @@ static const struct wl_callback_listener frame_listener = { frame_done };
 /* 0 if the compositor holds both buffers: try again after a release. */
 static int draw(struct mtk_window *win)
 {
-	struct shmbuf *b = get_buffer(win, win->w * win->scale, win->h * win->scale);
+	int s = mtk_draw_scale(win->w, win->h, win->scale);
+	struct shmbuf *b = get_buffer(win, win->w * s, win->h * s);
 	if (!b)
 		return 0;
 	cairo_t *cr = b->cr;
 	cairo_save(cr);
 	cairo_identity_matrix(cr);
-	cairo_scale(cr, win->scale, win->scale);
+	cairo_scale(cr, s, s);
 	win->l->paint(win, cr, win->w, win->h, win->data);
 	cairo_restore(cr);
 	cairo_surface_flush(b->cs);
@@ -260,7 +261,7 @@ static int draw(struct mtk_window *win)
 		wl_callback_destroy(win->frame);
 	win->frame = wl_surface_frame(win->surface);
 	wl_callback_add_listener(win->frame, &frame_listener, win);
-	wl_surface_set_buffer_scale(win->surface, win->scale);
+	wl_surface_set_buffer_scale(win->surface, s);
 	wl_surface_attach(win->surface, b->wl, 0, 0);
 	wl_surface_damage_buffer(win->surface, 0, 0, b->w, b->h);
 	wl_surface_commit(win->surface);

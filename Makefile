@@ -50,19 +50,24 @@ check: unit build/mtkdemo-asan
 
 # make test: the demo in a headless mwc from MWC_DIR (default ../mwc), checked in
 # screenshots, under ASan and UBSan.
-test: build/mtkdemo-asan
+test: build/mtkdemo-asan build/mtkdemo build/failpoll.so
 	MTKDEMO=build/mtkdemo-asan tests/ui.sh
+
+# For tests/ui.sh: a poll that fails. Preloaded into build/mtkdemo; ASan's runtime
+# must come first and would refuse it.
+build/failpoll.so: tests/failpoll.c | build
+	$(CC) -shared -fPIC -O2 -o $@ $< -ldl
 
 # make analyze: GCC's static analyzer over every source file, findings as errors.
 analyze: $(MTK_PROTO_H)
-	@for f in color.c rc.c draw.c input.c wl.c demo/mtkdemo.c; do \
+	@for f in color.c rc.c draw.c input.c wl.c demo/mtkdemo.c tests/failpoll.c; do \
 		echo "analyze $$f"; \
 		$(CC) $(MTK_CFLAGS) -O0 -fanalyzer -Werror -c $$f -o /dev/null || exit 1; \
 	done
 
 # make lint: C lines longer than LINT_MAX columns, tabs to every eighth column.
 LINT_MAX = 100
-LINT_FILES = *.c *.h tests/unit/*.c tests/unit/*.h demo/*.c
+LINT_FILES = *.c *.h tests/*.c tests/unit/*.c tests/unit/*.h demo/*.c
 lint:
 	@awk -v max=$(LINT_MAX) '{ \
 		n = 0; \

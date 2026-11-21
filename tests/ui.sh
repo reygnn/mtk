@@ -217,6 +217,37 @@ check "maximized, larger" "[ \"\$(get mtkdemo w)\" -gt 600 ]"
 check "it paints that size" "[ \"\$(ds size)\" = \"\$(get mtkdemo w)x\$(get mtkdemo h)\" ]"
 quit_demo ctrl+q
 
+# ---- past what Cairo draws -----------------------------------------------------
+# 9000 wide is 36000 at scale 4, past the 32767 Cairo draws: drawn at 3 and enlarged
+# by mwc. A buffer Cairo cannot draw stays black.
+echo 'Mwm*HEADLESS-1*outputScale: 4' >>"$XDG_CONFIG_HOME/mwc/mwmrc"
+reload_mwc
+check "the output is at scale 4" "[ \"\$(global output_HEADLESS-1 scale)\" = 400 ]"
+DEMO_LOG_SAVED=$DEMO_LOG DEMO_LOG=$SMOKE_DIR/wide.log
+WAYLAND_DEBUG=client MTKDEMO_FIXED=1 MTKDEMO_WIDTH=9000 start_demo
+DEMO_LOG=$DEMO_LOG_SAVED
+check "it is 9000 wide" "[ \"\$(get mtkdemo w)\" = 9000 ]"
+check "drawn at buffer scale 3" \
+	"grep -q 'wl_surface#[0-9]*\.set_buffer_scale(3)' \"$SMOKE_DIR/wide.log\""
+SC=4
+pixel_at "and drawn, not black" 24 240 $BG
+SC=1
+quit_demo Escape
+grep -q 'ERROR: AddressSanitizer\|runtime error' "$SMOKE_DIR/wide.log" &&
+	fail "the sanitizers report: $(grep -m1 'ERROR\|runtime error' "$SMOKE_DIR/wide.log")"
+sed -i '/outputScale/d' "$XDG_CONFIG_HOME/mwc/mwmrc"
+reload_mwc
+
+# ---- a poll that fails ----------------------------------------------------------
+# Told as itself, with its cause, not as a lost connection. Without ASan, whose
+# runtime must be loaded first.
+err=$(LD_PRELOAD=$MTK_DIR/build/failpoll.so WAYLAND_DISPLAY=wayland-0 \
+	"$MTK_DIR/build/mtkdemo" 2>&1 >/dev/null)
+st=$?
+[ $st = 1 ] && [ "$err" = "mtkdemo: poll: Cannot allocate memory" ] ||
+	fail "a failing poll: status $st, \"$err\""
+echo "ok: a failing poll is told as such"
+
 stop_mwc
 grep -q 'ERROR: AddressSanitizer\|runtime error' "$DEMO_LOG" &&
 	fail "the sanitizers report in $DEMO_LOG"
