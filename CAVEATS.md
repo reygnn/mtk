@@ -27,8 +27,9 @@ size. When that size is no multiple of the scale, a viewport shows it at its siz
 over the scale; without wp_viewporter it is shown at the largest scale below that
 divides it, and so a little larger. `XCURSOR_SIZE` above 256 counts as 256.
 
-Scrolling comes as wl_pointer 7 sends it, in wheel steps and pixels; high resolution
-wheels (`axis_value120`) are not asked for.
+Scrolling comes as wl_pointer 7 sends it; high resolution wheels (`axis_value120`)
+are not asked for. A touchpad's distance makes a step every 15 pixels, at most 20 a
+frame; a flood beyond that is dropped, not carried over.
 
 
 ## Colours

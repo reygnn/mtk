@@ -17,7 +17,7 @@
 #include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-compose.h>
 
-#define MTK_VERSION "0.1.0"
+#define MTK_VERSION "0.2.0"
 
 /* ---- colours (color.c) ---------------------------------------------------- */
 
@@ -199,6 +199,23 @@ uint32_t mtk_repeat_due(struct mtk_repeat *r, uint64_t now);
 /* ms until the next repeat, at most INT_MAX; -1 if none waits. */
 int mtk_repeat_timeout(const struct mtk_repeat *r, uint64_t now);
 
+/* Scrolling on one axis, in steps: a wheel's own, or a touchpad's distance, of which
+ * MTK_SCROLL_STEP pixels make one. At most MTK_SCROLL_MAX steps a frame. */
+#define MTK_SCROLL_STEP 15
+#define MTK_SCROLL_MAX 20
+struct mtk_scroll {
+	double acc;             /* distance not yet a step */
+	int steps;              /* the wheel's, this frame */
+};
+
+void mtk_scroll_value(struct mtk_scroll *s, double v);
+void mtk_scroll_discrete(struct mtk_scroll *s, int steps);
+/* The finger has left the touchpad: what is left of the distance goes. */
+void mtk_scroll_stop(struct mtk_scroll *s);
+/* The frame is over: its steps. A wheel's count and drop the distance; else whole
+ * steps of the distance are taken from it. */
+int mtk_scroll_frame(struct mtk_scroll *s);
+
 /* ---- Wayland (wl.c) -------------------------------------------------------- */
 
 struct mtk;
@@ -269,7 +286,8 @@ enum mtk_pointer_kind {
 };
 
 /* A pointer event, in surface pixels. Scrolling comes at the end of a frame, in
- * wheel steps (discrete) and in pixels (dx, dy, down and right positive). */
+ * steps as mtk_scroll_frame() makes them, and in pixels (dx, dy); down and right
+ * are positive. */
 struct mtk_pointer {
 	enum mtk_pointer_kind kind;
 	double x, y;

@@ -107,7 +107,7 @@ struct mtk {
 	uint32_t ptr_serial;            /* the last enter's, for set_cursor */
 	double ptr_x, ptr_y;
 	int axis;                       /* scrolling waits for the frame */
-	int steps_x, steps_y;
+	struct mtk_scroll scroll_x, scroll_y;
 	double dx, dy;
 	uint32_t axis_time;
 
@@ -509,6 +509,14 @@ static void key_repeat(struct mtk *m)
 		win->l->key(win, &k, win->data);
 }
 
+/* Off the window, or the pointer gone: no scrolling carries over. */
+static void scroll_reset(struct mtk *m)
+{
+	m->axis = 0;
+	m->scroll_x = m->scroll_y = (struct mtk_scroll){ 0 };
+	m->dx = m->dy = 0;
+}
+
 /* ---- the pointer ---------------------------------------------------------- */
 
 static void ptr_send(struct mtk *m, enum mtk_pointer_kind kind, uint32_t button,
@@ -522,8 +530,8 @@ static void ptr_send(struct mtk *m, enum mtk_pointer_kind kind, uint32_t button,
 		.serial = serial, .time = time, .mods = mtk_mods(m->kb_state),
 	};
 	if (kind == MTK_SCROLL) {
-		p.steps_x = m->steps_x;
-		p.steps_y = m->steps_y;
+		p.steps_x = mtk_scroll_frame(&m->scroll_x);
+		p.steps_y = mtk_scroll_frame(&m->scroll_y);
 		p.dx = m->dx;
 		p.dy = m->dy;
 	}
@@ -548,7 +556,7 @@ static void ptr_leave(void *data, struct wl_pointer *p, uint32_t serial,
 	struct mtk *m = data;
 	ptr_send(m, MTK_LEAVE, 0, serial, 0);
 	m->ptr_win = NULL;
-	m->axis = 0;
+	scroll_reset(m);
 }
 
 static void ptr_motion(void *data, struct wl_pointer *p, uint32_t time,
@@ -569,38 +577,40 @@ static void ptr_button(void *data, struct wl_pointer *p, uint32_t serial,
 		button, serial, time);
 }
 
-static void ptr_axis(void *data, struct wl_pointer *p, uint32_t time,
-	uint32_t axis, wl_fixed_t value)
-{
-	struct mtk *m = data;
-	double v = wl_fixed_to_double(value);
-	if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
-		m->dy += v;
-	else
-		m->dx += v;
-	m->axis = 1;
-	m->axis_time = time;
-}
-
-static void ptr_axis_discrete(void *data, struct wl_pointer *p, uint32_t axis,
-	int32_t steps)
-{
-	struct mtk *m = data;
-	if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
-		m->steps_y += steps;
-	else
-		m->steps_x += steps;
-	m->axis = 1;
-}
-
 static void ptr_frame(void *data, struct wl_pointer *p)
 {
 	struct mtk *m = data;
 	if (m->axis)
 		ptr_send(m, MTK_SCROLL, 0, 0, m->axis_time);
 	m->axis = 0;
-	m->steps_x = m->steps_y = 0;
 	m->dx = m->dy = 0;
+}
+
+static struct mtk_scroll *scroll_of(struct mtk *m, uint32_t axis)
+{
+	return axis == WL_POINTER_AXIS_VERTICAL_SCROLL ? &m->scroll_y : &m->scroll_x;
+}
+
+static void ptr_axis(void *data, struct wl_pointer *p, uint32_t time,
+	uint32_t axis, wl_fixed_t value)
+{
+	struct mtk *m = data;
+	double v = wl_fixed_to_double(value);
+	mtk_scroll_value(scroll_of(m, axis), v);
+	*(axis == WL_POINTER_AXIS_VERTICAL_SCROLL ? &m->dy : &m->dx) += v;
+	m->axis = 1;
+	m->axis_time = time;
+	/* Before wl_seat 5 no frame ends the event: each one counts by itself. */
+	if (wl_pointer_get_version(p) < WL_POINTER_FRAME_SINCE_VERSION)
+		ptr_frame(data, p);
+}
+
+static void ptr_axis_discrete(void *data, struct wl_pointer *p, uint32_t axis,
+	int32_t steps)
+{
+	struct mtk *m = data;
+	mtk_scroll_discrete(scroll_of(m, axis), steps);
+	m->axis = 1;
 }
 
 static void ptr_axis_source(void *data, struct wl_pointer *p, uint32_t source)
@@ -610,6 +620,7 @@ static void ptr_axis_source(void *data, struct wl_pointer *p, uint32_t source)
 static void ptr_axis_stop(void *data, struct wl_pointer *p, uint32_t time,
 	uint32_t axis)
 {
+	mtk_scroll_stop(scroll_of(data, axis));
 }
 
 static const struct wl_pointer_listener pointer_listener = {
@@ -641,7 +652,7 @@ static void seat_capabilities(void *data, struct wl_seat *s, uint32_t caps)
 			wl_pointer_destroy(m->pointer);
 		m->pointer = NULL;
 		m->ptr_win = NULL;
-		m->axis = 0;
+		scroll_reset(m);
 	}
 	if (want_kb && !m->keyboard) {
 		m->keyboard = wl_seat_get_keyboard(s);

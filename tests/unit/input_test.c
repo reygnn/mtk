@@ -222,6 +222,48 @@ TEST(cursor)
 	CHECK_INT(mtk_buffer_scale(100), 16);
 }
 
+TEST(scroll)
+{
+	struct mtk_scroll s = { 0 };
+	CHECK_INT(mtk_scroll_frame(&s), 0);
+	/* A wheel: its steps, the distance with them dropped. */
+	mtk_scroll_value(&s, 15);
+	mtk_scroll_discrete(&s, 1);
+	CHECK_INT(mtk_scroll_frame(&s), 1);
+	CHECK(s.acc == 0);
+	CHECK_INT(mtk_scroll_frame(&s), 0);
+	mtk_scroll_discrete(&s, -2);
+	mtk_scroll_discrete(&s, -1);
+	CHECK_INT(mtk_scroll_frame(&s), -3);
+	/* A touchpad: 15 pixels a step, the rest kept for the next frame. */
+	mtk_scroll_value(&s, 10);
+	CHECK_INT(mtk_scroll_frame(&s), 0);
+	mtk_scroll_value(&s, 10);
+	CHECK_INT(mtk_scroll_frame(&s), 1);
+	CHECK(s.acc == 5);
+	mtk_scroll_value(&s, -40);
+	CHECK_INT(mtk_scroll_frame(&s), -2);
+	CHECK(s.acc == -5);
+	/* The finger lifted: the rest goes. */
+	mtk_scroll_value(&s, 12);
+	mtk_scroll_stop(&s);
+	mtk_scroll_value(&s, 12);
+	CHECK_INT(mtk_scroll_frame(&s), 0);
+	/* A flood: at most MTK_SCROLL_MAX, and nothing carried over. */
+	mtk_scroll_discrete(&s, 1000);
+	mtk_scroll_discrete(&s, 1000);
+	CHECK_INT(mtk_scroll_frame(&s), MTK_SCROLL_MAX);
+	mtk_scroll_discrete(&s, INT_MIN);
+	CHECK_INT(mtk_scroll_frame(&s), -MTK_SCROLL_MAX);
+	mtk_scroll_value(&s, -1e6);
+	CHECK_INT(mtk_scroll_frame(&s), -MTK_SCROLL_MAX);
+	CHECK(s.acc == 0);
+	mtk_scroll_value(&s, 1e308);
+	mtk_scroll_value(&s, 1e308);    /* inf */
+	CHECK_INT(mtk_scroll_frame(&s), 0);
+	CHECK(s.acc == 0);
+}
+
 int main(void)
 {
 	ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
@@ -237,6 +279,7 @@ int main(void)
 	RUN(quits);
 	RUN(repeat);
 	RUN(seats);
+	RUN(scroll);
 	RUN(cursor);
 	xkb_state_unref(st);
 	xkb_keymap_unref(map);

@@ -1,5 +1,6 @@
 /* input.c - keys, key repeat, seats and cursor sizes, without Wayland. */
 #include <limits.h>
+#include <math.h>
 #include <stdlib.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
@@ -213,4 +214,44 @@ int mtk_repeat_timeout(const struct mtk_repeat *r, uint64_t now)
 		return 0;
 	uint64_t d = r->next - now;
 	return d > INT_MAX ? INT_MAX : (int)d;
+}
+
+static int clamp_steps(long v)
+{
+	return v > MTK_SCROLL_MAX ? MTK_SCROLL_MAX : v < -MTK_SCROLL_MAX ? -MTK_SCROLL_MAX :
+		(int)v;
+}
+
+void mtk_scroll_value(struct mtk_scroll *s, double v)
+{
+	s->acc += v;
+}
+
+void mtk_scroll_discrete(struct mtk_scroll *s, int steps)
+{
+	s->steps = clamp_steps((long)s->steps + clamp_steps(steps));
+}
+
+void mtk_scroll_stop(struct mtk_scroll *s)
+{
+	s->acc = 0;
+}
+
+int mtk_scroll_frame(struct mtk_scroll *s)
+{
+	int steps = s->steps;
+	s->steps = 0;
+	if (steps) {
+		s->acc = 0;
+		return steps;
+	}
+	double q = s->acc / MTK_SCROLL_STEP;
+	/* A flood, or a value no int holds, leaves nothing to carry on. */
+	if (!isfinite(q) || fabs(q) > MTK_SCROLL_MAX) {
+		s->acc = 0;
+		return !isfinite(q) ? 0 : q > 0 ? MTK_SCROLL_MAX : -MTK_SCROLL_MAX;
+	}
+	steps = (int)q;
+	s->acc -= steps * MTK_SCROLL_STEP;
+	return steps;
 }
