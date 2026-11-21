@@ -646,6 +646,8 @@ static void seat_capabilities(void *data, struct wl_seat *s, uint32_t caps)
 		m->pointer = wl_seat_get_pointer(s);
 		wl_pointer_add_listener(m->pointer, &pointer_listener, m);
 	} else if (!want_ptr && m->pointer) {
+		/* Gone without a leave, perhaps: the window hears of it all the same. */
+		ptr_send(m, MTK_LEAVE, 0, 0, 0);
 		if (wl_pointer_get_version(m->pointer) >= WL_POINTER_RELEASE_SINCE_VERSION)
 			wl_pointer_release(m->pointer);
 		else
