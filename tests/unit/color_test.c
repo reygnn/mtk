@@ -101,6 +101,24 @@ TEST(readable)
 	CHECK_INT(mtk_readable(0x808080, 0x808080, 0x909090), 0x909090);
 }
 
+/* A selection on a list: moved only as far as it needs, the shorter way. */
+TEST(apart)
+{
+	CHECK_INT(mtk_apart(0xc4c4c4, 0x7387ad, 2.0f), 0x7387ad);       /* 2.2:1, as is */
+	/* Base: #c6c1aa on the list #c4c4c4 has 1.04:1; white can't get to 2:1. */
+	uint32_t c = mtk_apart(0xc4c4c4, 0xc6c1aa, 2.0f);
+	CHECK(mtk_contrast_ratio(0xc4c4c4, c) >= 2.0f);
+	CHECK(mtk_luminance(c) < mtk_luminance(0xc6c1aa));
+	CHECK(mtk_contrast_ratio(0xc4c4c4, mtk_mix(c, 0xc6c1aa, 0.06f)) < 2.0f);
+	/* On a dark list the lighter way is the shorter one. */
+	c = mtk_apart(0x404040, 0x505050, 2.0f);
+	CHECK(mtk_luminance(c) > mtk_luminance(0x505050));
+	CHECK(mtk_contrast_ratio(0x404040, c) >= 2.0f);
+	/* Out of reach: black or white, whichever has more. */
+	CHECK_INT(mtk_apart(0x808080, 0x808080, 20.0f), 0x000000);
+	CHECK_INT(mtk_apart(0x202020, 0x202020, 20.0f), 0xffffff);
+}
+
 static int color(const char *s, uint32_t *c)
 {
 	*c = 0xdeadbe;
@@ -142,6 +160,7 @@ int main(void)
 	RUN(wcag);
 	RUN(dimmed);
 	RUN(readable);
+	RUN(apart);
 	RUN(parse_color);
 	return unit_done();
 }

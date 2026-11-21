@@ -281,6 +281,78 @@ TEST(palette)
 	CHECK_INT(t.inactive.fg, 0xffffff);
 }
 
+/* A list and its selection: 2:1 between them, 4.5:1 for their text, in mwc's own
+ * default, the reported Buckingham and every case of a colour set or not. */
+static void check_lists(const struct mtk_theme *t)
+{
+	CHECK(mtk_contrast_ratio(t->list.bg, t->select.bg) >= MTK_SELECT_CONTRAST);
+	CHECK(mtk_contrast_ratio(t->list.bg, t->list.fg) >= 4.5f);
+	CHECK(mtk_contrast_ratio(t->select.bg, t->select.fg) >= 4.5f);
+	CHECK_INT(t->list.bg, mtk_mix(t->inactive.bg, 0xffffff, 0.3f));
+	CHECK_INT(t->select.top, mtk_shade(t->select.bg, 0).top);
+}
+
+TEST(lists)
+{
+	struct mtk_theme t;
+	unsetenv("MWC_INACTIVE");
+	unsetenv("MWC_ACTIVE");
+	setenv("XDG_CONFIG_HOME", dir, 1);
+	rc(dir, "");
+	mtk_theme_load(&t);
+	check_lists(&t);
+	CHECK_INT(t.list.bg, 0xc4c4c4);
+	CHECK_INT(t.list.fg, 0x000000);         /* the built-in grey's black */
+	CHECK(t.select.bg != 0xc6c1aa);         /* 1.04:1 on the list, moved */
+
+	/* Buckingham with its palette: the list #a18fa1, active #9991a6, 1.00:1. */
+	rc(dir, "Mwm*activeBackground: #9991a6\nMwm*background: #8c8c8c\n"
+	   "Mwm*basicBackground: #795f78\nMwm*textForeground: #fffffe\n");
+	mtk_theme_load(&t);
+	check_lists(&t);
+	CHECK_INT(t.list.bg, 0xa18fa1);
+	CHECK(t.select.bg != 0x9991a6);
+	CHECK_INT(t.active.bg, 0x9991a6);       /* mwc's colour itself is kept */
+
+	/* Far enough already: the active colour as it is, its text as far as it reads. */
+	rc(dir, "Mwm*background: #aaaaaa\nMwm*activeBackground: #7387ad\n");
+	mtk_theme_load(&t);
+	check_lists(&t);
+	CHECK_INT(t.select.bg, 0x7387ad);
+	/* Motif's white on the set grey, not chosen: black or white on the list. */
+	CHECK_INT(t.list.fg, mtk_best_contrast(0xc4c4c4));
+
+	/* A text colour that is set stays where it reads. */
+	rc(dir, "Mwm*background: #202840\nMwm*foreground: #ffd700\n");
+	mtk_theme_load(&t);
+	check_lists(&t);
+	CHECK(mtk_contrast_ratio(t.list.bg, 0xffd700) < 4.5f || t.list.fg == 0xffd700);
+	rc(dir, "Mwm*background: #000040\nMwm*foreground: #ffd700\n");
+	mtk_theme_load(&t);
+	CHECK_INT(t.list.fg, 0xffd700);
+	check_lists(&t);
+
+	/* A theme made by hand gets the same: mtk_theme_lists() is what loads it. */
+	struct mtk_theme m = { 0 };
+	m.inactive = mtk_shade(0xaaaaaa, 0x000000);
+	m.active = mtk_shade(0xc6c1aa, 0x000000);
+	mtk_theme_lists(&m);
+	rc(dir, "");
+	mtk_theme_load(&t);
+	CHECK_INT(m.list.bg, t.list.bg);
+	CHECK_INT(m.list.fg, t.list.fg);
+	CHECK_INT(m.select.bg, t.select.bg);
+	CHECK_INT(m.select.fg, t.select.fg);
+
+	/* Light on light, dark on dark. */
+	rc(dir, "Mwm*background: #ffffff\nMwm*activeBackground: #ffffff\n");
+	mtk_theme_load(&t);
+	check_lists(&t);
+	rc(dir, "Mwm*background: #000000\nMwm*activeBackground: #262626\n");
+	mtk_theme_load(&t);
+	check_lists(&t);
+}
+
 int main(void)
 {
 	if (!mkdtemp(dir)) {
@@ -293,6 +365,7 @@ int main(void)
 	RUN(where);
 	RUN(theme);
 	RUN(palette);
+	RUN(lists);
 	char cmd[64];
 	snprintf(cmd, sizeof cmd, "rm -rf %s", dir);
 	if (system(cmd) != 0)
