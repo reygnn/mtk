@@ -242,11 +242,16 @@ TEST(palette)
 	CHECK_INT(t.active.bg, 0x9991a6);
 	CHECK_INT(t.active.fg, 0x000000);               /* 7.0:1, Motif's white 3.0:1 */
 	CHECK(mtk_contrast_ratio(t.inactive.bg, t.dim) >= 4.5f);
+	CHECK_INT(t.dim, mtk_dimmed(0x795f78, 0xfffffe));       /* on the palette's face */
 
 	/* Without textForeground black or white; foreground is the frames' alone. */
 	rc(dir, "Mwm*basicBackground: #d9d9d9\nMwm*foreground: #ffffff\n");
 	mtk_theme_load(&t);
 	CHECK(t.palette && !t.has_fg);
+	CHECK_INT(t.inactive.fg, 0x000000);
+	/* ... the better of them, where Motif's rule would take white at 3.4:1. */
+	rc(dir, "Mwm*basicBackground: #8c8c8c\n");
+	mtk_theme_load(&t);
 	CHECK_INT(t.inactive.fg, 0x000000);
 
 	/* Arizona's palette text has 3.8:1: moved as far as 4.5:1 needs. */
