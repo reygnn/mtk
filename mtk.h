@@ -17,7 +17,7 @@
 #include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-compose.h>
 
-#define MTK_VERSION "0.11.0"
+#define MTK_VERSION "0.12.0"
 
 /* ---- colours (color.c) ---------------------------------------------------- */
 
@@ -98,12 +98,15 @@ struct mtk_theme {
 	int has_fg, has_active_fg;      /* the user set the text colour */
 	int palette;                    /* Mwm*basicBackground is set */
 	uint32_t dim;                   /* mtk_dimmed() on inactive */
+	/* Error text on inactive: a dark red, a light one where white reads better,
+	 * moved towards black or white as far as 4.5:1 needs. */
+	uint32_t err;
 };
 
 void mtk_theme_load(struct mtk_theme *t);
 
-/* list and select from inactive, active, has_fg and palette, as mtk_theme_load()
- * sets them: for a theme a client makes of its own, in its tests. */
+/* list, select, dim and err from inactive, active, has_fg and palette, as
+ * mtk_theme_load() sets them: for a theme a client makes of its own, in its tests. */
 void mtk_theme_lists(struct mtk_theme *t);
 
 /* ---- drawing (draw.c) ------------------------------------------------------ */

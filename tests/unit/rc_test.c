@@ -373,6 +373,48 @@ TEST(lists)
 	check_lists(&t);
 }
 
+/* Error text: 4.5:1 on the window whatever its colour, red as long as that reads. */
+TEST(err)
+{
+	struct mtk_theme t;
+	unsetenv("MWC_INACTIVE");
+	unsetenv("MWC_ACTIVE");
+	setenv("XDG_CONFIG_HOME", dir, 1);
+	rc(dir, "");
+	mtk_theme_load(&t);
+	CHECK_INT(t.err, 0x830303);             /* Base: #8a0303 moved to 4.5:1 */
+	CHECK_INT(t.dim, mtk_dimmed(0xaaaaaa, 0x000000));
+	rc(dir, "Mwm*background: #ffffff\n");
+	mtk_theme_load(&t);
+	CHECK_INT(t.err, 0x8a0303);             /* reads as it is */
+	rc(dir, "Mwm*background: #202020\n");
+	mtk_theme_load(&t);
+	CHECK_INT(t.err, 0xffa0a0);             /* the light red on a dark face */
+	/* Motif's white on #8c8c8c has 3.4:1: towards it no red gets to 4.5:1. */
+	rc(dir, "Mwm*background: #8c8c8c\n");
+	mtk_theme_load(&t);
+	CHECK_INT(t.inactive.fg, 0xffffff);
+	CHECK(mtk_contrast_ratio(t.inactive.bg, t.err) >= 4.5f);
+	/* On the palette's face, not the frames'. */
+	rc(dir, "Mwm*background: #ffffff\nMwm*basicBackground: #795f78\n");
+	mtk_theme_load(&t);
+	CHECK(t.err != 0x8a0303 && mtk_contrast_ratio(0x795f78, t.err) >= 4.5f);
+	CHECK_INT(t.dim, mtk_dimmed(0x795f78, t.inactive.fg));
+
+	/* Every grey and some hues, made by hand as a client's test does. */
+	static const uint32_t hue[] = { 0x008080, 0x336699, 0xff0000, 0x00ff00, 0x0000ff,
+		0x800080, 0xc9a85c, 0x7387ad, 0x9991a6, 0xc6c1aa };
+	for (int i = 0; i < 256 + 10; i++) {
+		uint32_t bg = i < 256 ? (uint32_t)i * 0x010101 : hue[i - 256];
+		struct mtk_theme m = { 0 };
+		m.inactive = mtk_shade(bg, mtk_text_color(bg));
+		m.active = mtk_shade(0xc6c1aa, 0x000000);
+		mtk_theme_lists(&m);
+		CHECK(mtk_contrast_ratio(bg, m.err) >= 4.5f);
+		CHECK_INT(m.dim, mtk_dimmed(bg, m.inactive.fg));
+	}
+}
+
 int main(void)
 {
 	if (!mkdtemp(dir)) {
@@ -386,6 +428,7 @@ int main(void)
 	RUN(theme);
 	RUN(palette);
 	RUN(lists);
+	RUN(err);
 	char cmd[64];
 	snprintf(cmd, sizeof cmd, "rm -rf %s", dir);
 	if (system(cmd) != 0)

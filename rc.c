@@ -108,7 +108,8 @@ static uint32_t setting(const char *env, const char *res, uint32_t def, int *bui
 	return def;
 }
 
-/* A list and the row selected on it, faces of the clients' own. The list is lighter
+/* A list and the row selected on it, faces of the clients' own, and the dimmed
+ * and the error text on the window. The list is lighter
  * than the window; the active colour, as mwc's titles have it, often lands on its
  * brightness (Base: #c4c4c4 and #c6c1aa, 1.04:1), so the selection is moved apart.
  * Text that was chosen, set, the palette's or the built-in grey's black, stays as
@@ -121,6 +122,11 @@ void mtk_theme_lists(struct mtk_theme *t)
 	t->list = mtk_shade(list, chosen ? mtk_readable(list, fg, lbest) : lbest);
 	uint32_t sel = mtk_apart(list, t->active.bg, MTK_SELECT_CONTRAST);
 	t->select = mtk_shade(sel, mtk_readable(sel, t->active.fg, mtk_best_contrast(sel)));
+	t->dim = mtk_dimmed(bg, fg);
+	/* Towards the better of black and white, not fg: Motif's white on a mid grey
+	 * has less than 4.5:1 itself, and a red moved towards it never gets there. */
+	uint32_t best = mtk_best_contrast(bg);
+	t->err = mtk_readable(bg, best == 0xffffff ? 0xffa0a0 : 0x8a0303, best);
 }
 
 void mtk_theme_load(struct mtk_theme *t)
@@ -154,6 +160,5 @@ void mtk_theme_load(struct mtk_theme *t)
 			color_inactive_text(bg, builtin));
 		t->active = mtk_shade(act, t->has_active_fg ? afg : mtk_text_color(act));
 	}
-	t->dim = mtk_dimmed(t->inactive.bg, t->inactive.fg);
 	mtk_theme_lists(t);
 }

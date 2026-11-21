@@ -38,6 +38,10 @@ is that colour moved towards black or white until it has `MTK_SELECT_CONTRAST`, 
 on the list (`mtk_apart()`). The text on both has 4.5:1. mwc draws no list and keeps
 its colours; its armed menu item stands out by its bevel, not by colour.
 
+On the window `theme.dim` is dimmed text and `theme.err` error text: a dark red, or a
+light one where white reads better, moved towards black or white as far as 4.5:1
+needs.
+
 
 ## Use
 
