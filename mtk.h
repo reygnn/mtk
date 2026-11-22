@@ -17,7 +17,7 @@
 #include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-compose.h>
 
-#define MTK_VERSION "0.15.0"
+#define MTK_VERSION "0.16.0"
 
 /* ---- colours (color.c) ---------------------------------------------------- */
 
@@ -94,6 +94,9 @@ struct mtk_theme {
 	 * that is not Motif's) as far as it reads, else black or white; on select
 	 * active.fg as far as it reads. Clients' own faces: mwc draws no list. */
 	struct mtk_shade list, select;
+	/* The current row on a list, the one a frame marks as Motif's location
+	 * cursor: list.bg 30 % towards active.bg, its text as on list. */
+	struct mtk_shade current;
 	/* A field to type in, #f6f6f6, its text as on list: one face on every palette,
 	 * as the clients had it. */
 	struct mtk_shade field;
@@ -112,9 +115,9 @@ struct mtk_theme {
 
 void mtk_theme_load(struct mtk_theme *t);
 
-/* list, select, field, urgent, trough, folder, dim and err from inactive, active and
- * has_fg, as
- * mtk_theme_load() sets them: for a theme a client makes of its own, in its tests. */
+/* list, select, current, field, urgent, trough, folder, dim and err from inactive,
+ * active and has_fg, as mtk_theme_load() sets them: for a theme a client makes of
+ * its own, in its tests. */
 void mtk_theme_lists(struct mtk_theme *t);
 
 /* ---- drawing (draw.c) ------------------------------------------------------ */

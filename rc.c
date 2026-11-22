@@ -106,19 +106,21 @@ static uint32_t setting(const char *env, const char *res, uint32_t def)
 	return def;
 }
 
-/* A list and the row selected on it, a field, urgent, a trough and a folder, faces of the
- * clients' own, and the dimmed
- * and the error text on the window. The list is lighter
- * than the window; the active colour, as mwc's titles have it, often lands on its
- * brightness (IRIX's Base: #c4c4c4 and #c6c1aa, 1.04:1), so the selection is moved
- * apart. Text that was chosen, textForeground or a client's own, stays as far as it
- * reads; Motif's own is left for the better of black and white. */
+/* A list, the row selected on it and the current one, a field, urgent, a trough and
+ * a folder, faces of the clients' own, and the dimmed and the error text on the
+ * window. The list is lighter than the window; the active colour, as mwc's titles
+ * have it, often lands on its brightness (IRIX's Base: #c4c4c4 and #c6c1aa, 1.04:1),
+ * so the selection is moved apart. Text that was chosen, textForeground or a
+ * client's own, stays as far as it reads; Motif's own is left for the better of
+ * black and white. */
 void mtk_theme_lists(struct mtk_theme *t)
 {
 	uint32_t bg = t->inactive.bg, fg = t->inactive.fg;
 	uint32_t list = mtk_mix(bg, 0xffffff, 0.3f), lbest = mtk_best_contrast(list);
 	int chosen = t->has_fg || fg != mtk_text_color(bg);
 	t->list = mtk_shade(list, chosen ? mtk_readable(list, fg, lbest) : lbest);
+	uint32_t cur = mtk_mix(list, t->active.bg, 0.3f), cbest = mtk_best_contrast(cur);
+	t->current = mtk_shade(cur, chosen ? mtk_readable(cur, fg, cbest) : cbest);
 	uint32_t field = 0xf6f6f6, fbest = mtk_best_contrast(field);
 	t->field = mtk_shade(field, chosen ? mtk_readable(field, fg, fbest) : fbest);
 	uint32_t urgent = mtk_mix(bg, 0xffa000, 0.7f);

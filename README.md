@@ -36,6 +36,9 @@ is that colour moved towards black or white until it has `MTK_SELECT_CONTRAST`, 
 on the list (`mtk_apart()`). The text on both has 4.5:1. mwc draws no list and keeps
 its colours; its armed menu item stands out by its bevel, not by colour.
 
+The current row, the one a frame marks as Motif's location cursor, is
+`theme.current`: the list 30 % towards the active colour, its text as on the list.
+
 A field to type in is `theme.field`, `#f6f6f6` on every palette, its text as on the
 list. `theme.trough` is a scrollbar's trough, `inactive` 12 % towards black, and
 `theme.folder`, `#c9a85c`, a folder icon's face. `theme.urgent` is what wants

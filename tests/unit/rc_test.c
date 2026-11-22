@@ -282,6 +282,9 @@ static void check_lists(const struct mtk_theme *t)
 	CHECK(mtk_contrast_ratio(t->select.bg, t->select.fg) >= 4.5f);
 	CHECK_INT(t->list.bg, mtk_mix(t->inactive.bg, 0xffffff, 0.3f));
 	CHECK_INT(t->select.top, mtk_shade(t->select.bg, 0).top);
+	CHECK_INT(t->current.bg, mtk_mix(t->list.bg, t->active.bg, 0.3f));
+	CHECK(mtk_contrast_ratio(t->current.bg, t->current.fg) >= 4.5f);
+	CHECK_INT(t->current.top, mtk_shade(t->current.bg, 0).top);
 	CHECK_INT(t->field.bg, 0xf6f6f6);
 	CHECK(mtk_contrast_ratio(t->field.bg, t->field.fg) >= 4.5f);
 	CHECK_INT(t->field.bot, mtk_shade(0xf6f6f6, 0).bot);
@@ -306,6 +309,8 @@ TEST(lists)
 	CHECK_INT(t.select.bg, 0x2e5a8c);       /* far enough as it is */
 	CHECK_INT(t.select.fg, 0xffffff);
 	CHECK_INT(t.field.fg, 0x000000);
+	CHECK_INT(t.current.bg, 0xa4b1c0);
+	CHECK_INT(t.current.fg, 0x000000);
 	CHECK_INT(t.urgent.bg, 0xedab3b);
 	CHECK_INT(t.urgent.fg, 0x000000);
 	CHECK_INT(t.trough, 0xacacac);
@@ -373,12 +378,14 @@ TEST(lists)
 	CHECK_INT(m.select.bg, t.select.bg);
 	CHECK_INT(m.select.fg, t.select.fg);
 	CHECK_INT(m.field.fg, t.field.fg);
+	CHECK_INT(m.current.bg, t.current.bg);
 	CHECK_INT(m.trough, t.trough);
 	/* A text a client chose otherwise than Motif, without the flags: kept. */
 	m.inactive = mtk_shade(0x8c8c8c, 0x202020);
 	mtk_theme_lists(&m);
 	CHECK_INT(m.list.fg, 0x202020);
 	CHECK_INT(m.field.fg, 0x202020);
+	CHECK_INT(m.current.fg, 0x202020);
 
 	/* Light on light, dark on dark. */
 	rc(dir, "Mwm*basicBackground: #ffffff\nMwm*activeBackground: #ffffff\n");
@@ -430,6 +437,7 @@ TEST(err)
 		mtk_theme_lists(&m);
 		CHECK(mtk_contrast_ratio(bg, m.err) >= 4.5f);
 		CHECK(mtk_contrast_ratio(m.urgent.bg, m.urgent.fg) >= 4.5f);
+		CHECK(mtk_contrast_ratio(m.current.bg, m.current.fg) >= 4.5f);
 		CHECK_INT(m.dim, mtk_dimmed(bg, m.inactive.fg));
 	}
 }
