@@ -106,7 +106,8 @@ static uint32_t setting(const char *env, const char *res, uint32_t def)
 	return def;
 }
 
-/* A list and the row selected on it, faces of the clients' own, and the dimmed
+/* A list and the row selected on it, a field, a trough and a folder, faces of the
+ * clients' own, and the dimmed
  * and the error text on the window. The list is lighter
  * than the window; the active colour, as mwc's titles have it, often lands on its
  * brightness (IRIX's Base: #c4c4c4 and #c6c1aa, 1.04:1), so the selection is moved
@@ -118,6 +119,10 @@ void mtk_theme_lists(struct mtk_theme *t)
 	uint32_t list = mtk_mix(bg, 0xffffff, 0.3f), lbest = mtk_best_contrast(list);
 	int chosen = t->has_fg || fg != mtk_text_color(bg);
 	t->list = mtk_shade(list, chosen ? mtk_readable(list, fg, lbest) : lbest);
+	uint32_t field = 0xf6f6f6, fbest = mtk_best_contrast(field);
+	t->field = mtk_shade(field, chosen ? mtk_readable(field, fg, fbest) : fbest);
+	t->trough = mtk_mix(bg, 0x000000, 0.12f);
+	t->folder = 0xc9a85c;
 	uint32_t sel = mtk_apart(list, t->active.bg, MTK_SELECT_CONTRAST);
 	t->select = mtk_shade(sel, mtk_readable(sel, t->active.fg, mtk_best_contrast(sel)));
 	t->dim = mtk_dimmed(bg, fg);

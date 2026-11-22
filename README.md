@@ -36,6 +36,11 @@ is that colour moved towards black or white until it has `MTK_SELECT_CONTRAST`, 
 on the list (`mtk_apart()`). The text on both has 4.5:1. mwc draws no list and keeps
 its colours; its armed menu item stands out by its bevel, not by colour.
 
+A field to type in is `theme.field`, `#f6f6f6` on every palette, its text as on the
+list. `theme.trough` is a scrollbar's trough, `inactive` 12 % towards black, and
+`theme.folder`, `#c9a85c`, a folder icon's face. A client draws with these and sets
+no colours of its own.
+
 On the window `theme.dim` is dimmed text and `theme.err` error text: a dark red, or a
 light one where white reads better, moved towards black or white as far as 4.5:1
 needs.
